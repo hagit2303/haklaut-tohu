@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מסע המזון: סימולציה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Secular+One&family=Assistant:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="../assets/farm.css">
+<link rel="stylesheet" href="../assets/digest.css">
+<link rel="stylesheet" href="../assets/lab-farm.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <span class="brand">🌾 מסע המזון · סימולציה</span>
+    <a class="linkbtn" href="index.html">→ לדף היחידה</a>
+  </header>
+  <nav class="cmap" id="cmap" aria-label="רצף היחידות"></nav>
+
+  <section class="hero">
+    <h1>מסע המזון</h1>
+    <p>עקבו אחרי כדור מזון שבו עמילן, חלבון, שומן וסיבים, תחנה אחרי תחנה, באדם, בעוף ובפרה. בכל תחנה בודקים איזה פירוק מתרחש, מה מתפרק ומה נספג. במצב <b>זיהוי בכתיבה</b> כותבים בעצמכם את שם החלק ואת התפקיד שלו.</p>
+  </section>
+
+  <div class="row">
+    <div class="animals" role="group" aria-label="בחירת בעל חיים">
+      <button data-a="human" aria-pressed="true">🧍 אדם</button>
+      <button data-a="bird" aria-pressed="false">🐔 עוף</button>
+      <button data-a="cow" aria-pressed="false">🐄 פרה</button>
+    </div>
+    <div class="modes" role="group" aria-label="מצב" style="margin-inline-start:auto">
+      <button data-m="explore" aria-pressed="true">🔍 חקירה</button>
+      <button data-m="id" aria-pressed="false">✍️ זיהוי בכתיבה</button>
+    </div>
+  </div>
+
+  <div class="simgrid" style="margin-top:12px">
+    <div class="stage"><div id="fig"></div><p class="hint-sel" id="figHint"></p></div>
+    <div class="card panel" id="panel" aria-live="polite"></div>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <h3>⬇ דוח PDF של הסימולציה</h3>
+    <p class="hint">הדוח הוא לבעל החיים שבחרתם למעלה (אדם, עוף או פרה). בדוח מופיעים השם, התחנות שעברתם במצב חקירה, והתשובות שלכם במצב זיהוי בכתיבה, לצד התשובות הנכונות. אפשר להוריד דוח נפרד לכל בעל חיים.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <label>שם מלא <input class="numin" id="stName" autocomplete="name" style="width:180px"></label>
+      <label>כיתה <input class="numin" id="stClass" style="width:90px"></label>
+      <button class="dl" id="dl">⬇ הורדת דוח PDF: אדם</button>
+    </div>
+    <p class="hint" id="dlmsg"></p>
+  </section>
+
+  <footer>מדעי החקלאות · יחידה 3: מערכת העיכול · האיורים אינם בקנה מידה · היחידה מתבססת על חומרים מאתר מורי החקלאות ומורחבת בחומרים נוספים.</footer>
+</div>
+
+<div id="report"></div>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../assets/pdf.js"></script>
+<script src="../assets/course.js"></script>
+<script src="../assets/digest.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a };
+renderCourse($('cmap'), 3, '../');
+
+let A = 'human', M = 'explore', cur = 0;
+const SEEN = { human: new Set(), bird: new Set(), cow: new Set() }, DONE = { human: {}, bird: {}, cow: {} };
+
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e }
+
+// האיור: תמונה אמיתית (FIG ב-digest.js) ועליה נקודות לחיצות
+// מיקום חלק: נקודה בתמונה, או מקום בפס שמתחת לתמונה לחלק שלא מופיע בה
+function pos(p) {
+  const f = FIG[A], q = f.pts[p.id]; if (q) return { x: q[0], y: q[1], off: q[2] === 'off' };
+  const offs = ANIMALS[A].parts.filter(r => !f.pts[r.id] && !r.special), i = offs.indexOf(p);
+  return { x: f.w - f.w * (i + 1) / (offs.length + 1), y: f.h + f.strip * .46, off: true };
+}
+// סדר המספרים במצב זיהוי: לפי FIG.num, ואם אין, מלמעלה למטה
+const idSort = (p, q) => { const n = FIG[A].num; return n ? n[p.id] - n[q.id] : pos(p).y - pos(q).y || pos(q).x - pos(p).x };
+const inPic = p => { const q = FIG[A].pts[p.id]; return !!q && q[2] !== 'off' && !p.special };
+function draw() {
+  const f = FIG[A], k = f.k, strip = M === 'explore' && f.strip, H = f.h + (strip || 0);
+  $('fig').innerHTML = `<svg viewBox="0 0 ${f.w} ${H}" class="dg real" role="img" aria-label="${f.alt}"><image href="${f.src}" width="${f.w}" height="${f.h}"/></svg>`;
+  const svg = $('fig').querySelector('svg');
+  const defs = el('defs', {}, svg); const mk = el('marker', { id: 'arrowHead', viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, defs);
+  el('path', { d: 'M0 0 L10 5 L0 10 Z', fill: 'var(--accent)' }, mk);
+  (f.hide || []).forEach(([x, y, w, h]) => el('rect', { x, y, width: w, height: h, fill: '#fff' }, svg));
+  if (strip) {
+    el('rect', { y: f.h, width: f.w, height: f.strip, class: 'strip' }, svg);
+    const t = el('text', { x: f.w - 6 * k, y: f.h + 11 * k, class: 'striptxt', style: `font-size:${10 * k}px` }, svg); t.textContent = 'לא מופיעים בתמונה:';
+  }
+  // במצב זיהוי: התוויות שבתמונה מוסתרות
+  if (M === 'id') (f.mask || []).forEach(([x, y, w, h]) => {
+    el('rect', { x, y, width: w, height: h, rx: 4, class: 'msk' }, svg);
+    const t = el('text', { x: x + w / 2, y: y + h / 2, class: 'msktxt', style: `font-size:${Math.min(h * .7, 14 * k)}px` }, svg); t.textContent = '?';
+  });
+  if (f.rumin) el('path', { d: f.rumin, class: 'rumin', id: 'ruminArrow', style: `stroke-width:${3 * k}px` }, svg);
+  const g = el('g', { id: 'hsg' }, svg);
+  const parts = M === 'explore' ? ANIMALS[A].parts.filter(p => !p.special) : idOrder;
+  parts.forEach((p, i) => {
+    const o = pos(p);
+    const h = el('g', { class: 'hs' + (o.off ? ' off' : ''), tabindex: 0, role: 'button', 'data-id': p.id, transform: `translate(${o.x} ${o.y}) scale(${k})` }, g);
+    el('circle', { r: 11 }, h);
+    const t = el('text', {}, h); t.textContent = M === 'explore' ? (p.st || '+') : (i + 1);
+    if (o.off) { const n = el('text', { y: 15, class: 'offname' }, h); n.textContent = p.name.replace(/ \(.*\)/, '') }
+    h.setAttribute('aria-label', M === 'explore' ? p.name : 'חלק מספר ' + (i + 1));
+  });
+  if (M === 'explore') { const b = el('g', { class: 'bolus', id: 'bolus' }, svg); el('circle', { r: 8 }, b) }
+}
+
+/* ---------- חקירה ---------- */
+function showStation(i) {
+  const R = route(A); cur = Math.max(0, Math.min(i, R.length - 1)); const p = R[cur]; SEEN[A].add(p.id);
+  const b = $('bolus'), o = pos(p), k = FIG[A].k; if (b) b.style.transform = `translate(${o.x - 15 * k}px,${o.y - 15 * k}px) scale(${k})`;
+  const ra = document.getElementById('ruminArrow'); if (ra) ra.classList.toggle('on', !!p.special);
+  mark(p.id === 'rumination' ? 'mouth' : p.id);
+  secretions(A === 'human' && p.id === 'duodenum');
+  $('panel').innerHTML = `<span class="label">${ANIMALS[A].icon} ${ANIMALS[A].name} · ${ANIMALS[A].kind} · תחנה ${cur + 1} מתוך ${R.length}</span>
+   <h3>${p.name}</h3><div class="tags">${p.tags.map(t => `<span>${t}</span>`).join('')}</div>
+   <p class="role">🎯 <b>התפקיד:</b> ${ROLE[A][p.id][0]}</p>
+   <div class="info"><p>${p.t}</p></div>
+   ${A === 'human' && p.id === 'duodenum' ? '<p class="note">באיור: <b style="color:#3f7a2a">מרה</b> זורמת מכיס המרה, ו<b style="color:#7b4fb8">מיץ לבלב</b> זורם מהלבלב, אל התריסריון.</p>' : ''}
+   <div class="nut"><b>מה קורה לכל רכיב מזון בתחנה הזו?</b>${NUT.map(([k, e, nm]) => { const [s, x] = p.n[k]; return `<div class="r"><span class="e" aria-hidden="true">${e}</span><b>${nm}<span class="badge st-${s}">${STATE[s]}</span></b>${x ? `<small>${x}</small>` : ''}</div>` }).join('')}</div>
+   <div class="row"><button class="btn ghost" id="prev" ${cur ? '' : 'disabled'}>→ הקודם</button><button class="btn" id="next" ${cur < R.length - 1 ? '' : 'disabled'}>הבא ←</button></div>
+   <div class="track2" aria-label="תחנות">${R.map((q, k) => `<button data-k="${k}" class="${k === cur ? 'cur' : k < cur ? 'seen' : ''}">${k + 1}. ${q.name}</button>`).join('')}</div>
+   ${cur === R.length - 1 ? endNote() : ''}`;
+  $('prev').onclick = () => showStation(cur - 1); $('next').onclick = () => showStation(cur + 1);
+  $('panel').querySelectorAll('.track2 button').forEach(x => x.onclick = () => showStation(+x.dataset.k));
+  $('figHint').textContent = 'לחיצה על מספר באיור מעבירה לתחנה. "+" מסמן איבר נלווה: המזון אינו עובר בו, אבל הוא מפריש לצינור העיכול אנזימי עיכול או מרה.' + (FIG[A].strip ? ' חלקים שלא מופיעים בתמונה מסומנים בפס התחתון.' : '');
+}
+// תחנת התריסריון באדם: מרה מכיס המרה (ירוק) ומיץ לבלב (סגול) זורמים לתריסריון
+function secretions(on) {
+  const svg = $('fig').querySelector('svg'); const old = svg.querySelector('#secr'); if (old) old.remove();
+  const f = FIG[A]; if (!on || !f.secr) return;
+  const g = el('g', { id: 'secr' }, svg), k = f.k;
+  f.secr.forEach(([d, c, nm, x, y]) => {
+    el('path', { d, fill: 'none', stroke: c, 'stroke-width': 4 * k, 'stroke-dasharray': `${3 * k} ${3 * k}` }, g);
+    ['0s', '-1s'].forEach(b => { const dot = el('circle', { r: 5 * k, fill: c, stroke: '#fff', 'stroke-width': 1.5 * k }, g); el('animateMotion', { dur: '2s', begin: b, repeatCount: 'indefinite', path: d }, dot) });
+    const t = el('text', { x, y, class: 'tagname', style: `fill:${c};font-size:${13 * k}px` }, g); t.textContent = nm;
+  });
+}
+function endNote() {
+  const t = { human: 'באדם התאית אינה מתפרקת, כי לאדם אין צלולאז. היא יוצאת בצואה.', bird: 'בעוף הקורקבן מחליף את השיניים. רק מעט מהתאית מותסס, במעיים העיוורים.', cow: 'בפרה רוב התאית מתפרקת בכרס בעזרת המיקרואורגניזמים, והאנרגיה נספגת כחומצות שומן נדיפות. זה הפתרון לחידה מ"התזונאי של הרפת": איך פרה חיה מקש ושחת.' }[A];
+  return `<p class="note">🏁 <b>סוף המסלול.</b> ${t} נסו גם בעל חיים אחר, ואז עברו למצב זיהוי.</p>`;
+}
+function showOrgan(p) {
+  mark(p.id);
+  $('panel').innerHTML = `<span class="label">${ANIMALS[A].icon} ${ANIMALS[A].name}</span><h3>${p.name}</h3><div class="tags"><span class="acc">איבר נלווה</span></div><p class="role">🎯 <b>התפקיד:</b> ${ROLE[A][p.id][0]}</p><div class="info"><p>${p.t}</p></div>
+   <div class="row"><button class="btn" id="back">חזרה למסלול המזון</button></div>`;
+  $('back').onclick = () => showStation(cur);
+}
+function mark(id) {
+  document.querySelectorAll('.dg [data-o]').forEach(e => e.classList.toggle('hl', e.dataset.o === id));
+  document.querySelectorAll('.hs').forEach(h => h.classList.toggle('cur', h.dataset.id === id));
+}
+
+/* ---------- זיהוי בכתיבה (משוב בלי ציון) ---------- */
+let idOrder = [], idSel = null, done = {};
+function startId() {
+  done = DONE[A]; idOrder = idParts(A).filter(inPic).sort(idSort);
+  idSel = idOrder[0].id; draw(); markId(); renderId();
+}
+function markId() {
+  document.querySelectorAll('.hs').forEach(h => { const d = done[h.dataset.id];
+    h.classList.toggle('cur', h.dataset.id === idSel); h.classList.toggle('ok', !!d && d.ok); h.classList.toggle('no', !!d && !d.ok);
+    h.querySelectorAll('.tagname').forEach(t => t.remove());
+    if (d) { const t = document.createElementNS(NS, 'text'); t.setAttribute('class', 'tagname'); t.setAttribute('y', -16); t.textContent = ANIMALS[A].parts.find(p => p.id === h.dataset.id).name.replace(/ \(.*\)/, ''); h.appendChild(t) } });
+}
+const nutList = ks => ks.length ? ks.map(k => NUTN[k]).join(', ') : 'שום רכיב לא מתפרק כאן בפירוק כימי';
+function renderId() {
+  const i = idOrder.findIndex(p => p.id === idSel), p = idOrder[i], d = done[p.id], n = Object.keys(done).length;
+  $('panel').innerHTML = `<span class="label">${ANIMALS[A].icon} ${ANIMALS[A].name} · זיהוי בכתיבה · עניתם על ${n} מתוך ${idOrder.length}</span>
+   <h3>חלק מספר ${i + 1}</h3>
+   <p class="hint">כתבו בעצמכם את שם החלק ואת התפקיד שלו, ואז לחצו בדיקה. אין כאן ציון: אחרי הבדיקה מופיעות התשובה הנכונה וההסבר.</p>
+   <div class="task"><p class="q">1. איך קוראים לחלק הזה?</p><input class="numin" id="inName" style="width:100%" autocomplete="off" placeholder="שם החלק" ${d ? 'disabled' : ''} value="${d ? d.name.replace(/"/g, '&quot;') : ''}"></div>
+   <div class="task"><p class="q">2. מה התפקיד שלו? <small>למשל: אגירה, פירוק מכני, הפרשת מרה, ספיגת מים</small></p><input class="numin" id="inNut" style="width:100%" autocomplete="off" placeholder="כתבו את התפקיד" ${d ? 'disabled' : ''} value="${d ? d.nut.replace(/"/g, '&quot;') : ''}"></div>
+   <div class="row">${d ? '' : '<button class="btn" id="chk">בדיקה</button><button class="btn ghost" id="hintB">💡 רמז</button>'}${i < idOrder.length - 1 ? '<button class="btn ghost" id="nextP">לחלק הבא ←</button>' : ''}</div>
+   <div id="idfb" role="status">${d ? d.html : ''}</div>
+   ${n === idOrder.length ? '<p class="fb ok">🎉 עברתם על כל החלקים! נסו בעל חיים אחר, או חזרו למצב חקירה.</p>' : ''}
+   <div class="row"><button class="btn ghost" id="restart">התחלה מחדש</button></div>`;
+  $('figHint').textContent = 'לחיצה על מספר באיור בוחרת חלק. אפשר לענות בכל סדר.';
+  $('restart').onclick = () => { DONE[A] = {}; startId() };
+  if ($('nextP')) $('nextP').onclick = () => { const nx = idOrder.slice(i + 1).find(q => !done[q.id]) || idOrder[i + 1]; idSel = nx.id; markId(); renderId() };
+  if (d) return;
+  $('hintB').onclick = () => { $('idfb').innerHTML = `<p class="fb no">💡 ${hint(p)} השם מתחיל באות "${p.name[0]}".</p>` };
+  $('inName').focus();
+  $('chk').onclick = () => {
+    const nm = $('inName').value.trim(), nt = $('inNut').value.trim();
+    if (!nm || nt.length < 3) { $('idfb').innerHTML = '<p class="fb no">כתבו תשובה בשני השדות, ואז לחצו בדיקה.</p>'; return }
+    const okN = nameOk(A, p, nm), okB = roleOk(A, p.id, nt);
+    const acc = !p.st ? `<br><b>שימו לב:</b> זה איבר נלווה. המזון אינו עובר בו, אבל הוא מפריש לצינור העיכול ${SEC[p.id] || 'מיצי עיכול'}.` : '';
+    const html = `<p class="fb ${okN ? 'ok' : 'no'}">${okN ? '✓ השם נכון' : '✘ השם הנכון'}: <b>${p.name}</b></p>
+      <p class="fb ${okB ? 'ok' : 'no'}">${okB ? '✓ התפקיד נכון' : '✘ התפקיד לא מדויק'}. 🎯 <b>התפקיד:</b> ${ROLE[A][p.id][0]}.${acc}</p>
+      <div class="note">${p.t}</div>`;
+    done[p.id] = { ok: okN && okB, name: nm, nut: nt, html }; markId(); renderId();
+  };
+  $('inNut').onkeydown = $('inName').onkeydown = e => { if (e.key === 'Enter') $('chk').click() };
+}
+function hint(p) {
+  const H = { mouth: 'הפה נמצא בראש, בתחילת המסלול.', beak: 'המקור בקצה הראש.', esophagus: 'צינור ארוך שיוצא מהפה.', stomach: 'נמצאת אחרי הוושט, מתחת לכבד.', duodenum: 'יוצא מהקיבה ויוצר קשת.', small: 'הצינור המפותל והארוך.', large: 'רחב יותר, ומוביל לפתח היציאה.', anus: 'בקצה המסלול.', liver: 'האיבר הגדול והכהה.', gall: 'קטן וירקרק, מתחת לכבד.', pancreas: 'צהבהב ומוארך.', crop: 'הרחבה בוושט, בבסיס הצוואר.', prov: 'קטנה ומוארכת, לפני הקורקבן.', gizzard: 'עגול ושרירי, ובתוכו חצץ.', ceca: 'שני שקים שיוצאים מאותה נקודה.', cloaca: 'הפתח בקצה הגוף.', rumen: 'המדור הגדול ביותר.', reticulum: 'הדופן דמוית חלת דבש.', omasum: 'בפנים קפלים כמו דפים.', abomasum: 'מוארכת, בתחתית הבטן.' };
+  // רמזים לפי התמונה של בעל החיים
+  const HA = { cow: { esophagus: 'הצינור שמגיע מהפה ונכנס לקיבה, בצד ימין למעלה.', small: 'הצינור שיוצא מהקיבה, בצד שמאל למעלה.', reticulum: 'מדור קטן ועגול, ליד המקום שבו הוושט נכנס לקיבה.', omasum: 'מדור עגול, בין קיבת הכוסות לקיבה האמיתית.', abomasum: 'המדור המוארך שממנו המזון עובר למעי.', rumen: 'המדור הגדול ביותר, בצד שמאל.' },
+    bird: { esophagus: 'צינור שיוצא מהראש, לצד קנה הנשימה.', small: 'הצינור הארוך והמפותל, בצד ימין.', prov: 'קטנה ומוארכת, בין הזפק לקורקבן.' } };
+  return 'רמז: ' + ((HA[A] || {})[p.id] || H[p.id] || '');
+}
+
+/* ---------- דוח PDF לכל בעל חיים ---------- */
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function buildReport() {
+  const an = ANIMALS[A], parts = idParts(A).filter(inPic).sort(idSort), D = DONE[A], R = route(A);
+  const ans = parts.filter(p => D[p.id]), ok = ans.filter(p => D[p.id].ok).length;
+  $('report').innerHTML = `<h1>סימולציה: מסע המזון · ${an.icon} ${an.name}</h1>
+   <p>שם: <b>${esc($('stName').value.trim())}</b> · כיתה: <b>${esc($('stClass').value.trim())}</b> · תאריך: ${new Date().toLocaleDateString('he-IL')}</p>
+   <h2 style="font-size:19px;margin:12px 0 4px">🔍 מצב חקירה</h2>
+   <p>עברו על <b>${R.filter(p => SEEN[A].has(p.id)).length}</b> מתוך <b>${R.length}</b> תחנות: ${R.map(p => (SEEN[A].has(p.id) ? '✔ ' : '☐ ') + p.name).join(' · ')}</p>
+   <h2 style="font-size:19px;margin:12px 0 4px">✍️ זיהוי בכתיבה</h2>
+   <p>ענו על <b>${ans.length}</b> מתוך <b>${parts.length}</b> חלקים. שם ותפקיד נכונים: <b>${ok}</b>${ans.length ? ` (${Math.round(ok / ans.length * 100)}%)` : ''}.</p>
+   ${parts.map((p, i) => { const d = D[p.id];
+     if (!d) return `<div class="rr"><b>${i + 1}. ${p.name}</b><span>לא נענה</span></div>`;
+     const okN = nameOk(A, p, d.name), okB = roleOk(A, p.id, d.nut);
+     return `<div class="rr" style="display:block"><b>${i + 1}. ${p.name}</b><br>
+      <span class="${okN ? 'y' : 'n'}">${okN ? '✔' : '✘'}</span> שם שנכתב: ${esc(d.name)}<br>
+      <span class="${okB ? 'y' : 'n'}">${okB ? '✔' : '✘'}</span> תפקיד שנכתב: ${esc(d.nut)}
+      ${okB ? '' : `<br><span style="color:#2E7D4F">התפקיד: ${ROLE[A][p.id][0]}</span>`}</div>` }).join('')}
+   <p style="margin-top:12px;color:#5C6F66;font-size:13px">מדעי החקלאות · יחידה 3: מערכת העיכול · סימולציה · שגיאות כתיב קלות אינן נחשבות טעות · היחידה מתבססת על חומרים מאתר מורי החקלאות ומורחבת בחומרים נוספים.</p>`;
+}
+$('dl').onclick = async () => {
+  const nm = $('stName').value.trim();
+  if (!nm) { $('dlmsg').textContent = 'כתבו שם מלא וכיתה. הם יופיעו בדוח.'; $('stName').focus(); return }
+  const b = $('dl'), old = b.textContent; b.disabled = true; b.textContent = 'מכין קובץ…';
+  try { buildReport(); const r = $('report'); r.style.display = 'block';
+    await downloadPdf(r, `סימולציה-${ANIMALS[A].name}-${nm.replace(/[\\/:*?"<>|]/g, '')}.pdf`); $('dlmsg').textContent = 'הקובץ מוכן. שמרו אותו והעלו למשימה ב-Classroom.';
+  } catch (e) { $('dlmsg').textContent = 'ההורדה לא הצליחה. נסו שוב, או הדפיסו את הדף (Ctrl+P) ושמרו כ-PDF.' }
+  $('report').style.display = 'none'; b.disabled = false; b.textContent = old;
+};
+
+/* ---------- אירועים ---------- */
+$('fig').addEventListener('click', e => {
+  const h = e.target.closest('.hs'); if (!h) return;
+  const id = h.dataset.id;
+  if (M === 'id') { idSel = id; markId(); renderId(); return }
+  const p = ANIMALS[A].parts.find(q => q.id === id);
+  if (p.st) showStation(route(A).indexOf(p)); else showOrgan(p);
+});
+$('fig').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.hs')) { e.preventDefault(); e.target.closest('.hs').dispatchEvent(new MouseEvent('click', { bubbles: true })) } });
+document.querySelectorAll('.animals button').forEach(b => b.onclick = () => { A = b.dataset.a; document.querySelectorAll('.animals button').forEach(x => x.setAttribute('aria-pressed', x === b)); go() });
+document.querySelectorAll('.modes button').forEach(b => b.onclick = () => { M = b.dataset.m; document.querySelectorAll('.modes button').forEach(x => x.setAttribute('aria-pressed', x === b)); go() });
+function go() { $('dl').textContent = '⬇ הורדת דוח PDF: ' + ANIMALS[A].name; if (M === 'id') startId(); else { draw(); showStation(0) } }
+const q = new URLSearchParams(location.search); if (ANIMALS[q.get('a')]) { A = q.get('a'); document.querySelectorAll('.animals button').forEach(x => x.setAttribute('aria-pressed', x.dataset.a === A)) }
+go();
+</script>
+<a id="tohu-home" href="../index.html" aria-label="חזרה לדף הבית" style="position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:14px;z-index:2147483000;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#2f5d3a;color:#fff;font:700 15px Assistant,system-ui,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.28);direction:rtl">🏠 בית</a>
+</body>
+</html>

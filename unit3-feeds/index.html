@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>סוגי מזונות ומנת המזון</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Secular+One&family=Assistant:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="../assets/farm.css">
+<link rel="stylesheet" href="../assets/digest.css">
+<style>
+.go{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.go a{display:grid;gap:6px;text-decoration:none;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);transition:border-color .2s,transform .2s}
+.go a:hover{border-color:var(--accent);transform:translateY(-2px)}
+.go .eartag{width:44px;height:50px;font-size:1.2rem;border-radius:12px 12px 18px 18px}.go .eartag span{margin-top:12px}
+.go h3{font-size:1.25rem;color:var(--accent)}
+.go small{color:var(--muted)}
+.ext::after{content:" ↗";font-size:.85em}
+@media (prefers-reduced-motion:reduce){.go a{transition:none}.go a:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar"><span class="brand">🌾 סוגי מזונות ומנת המזון</span></header>
+  <nav class="cmap" id="cmap" aria-label="רצף היחידות"></nav>
+
+  <section class="hero">
+    <span class="label">מדעי החקלאות · יחידה 4 · כ-10 שעות</span>
+    <h1>סוגי מזונות ומנת המזון ברפת ובלול</h1>
+    <p>ביחידה הקודמת למדנו מה קורה למזון בכרס, בקורקבן ובמעיים. עכשיו נשאל מה מגישים לפרה ולתרנגולת: מזון גס או מרוכז, תחמיץ או שחת, ובאיזה יחס. נלמד גם מה קורה כשהמנה לא מאוזנת.</p>
+    <div class="note">🤔 <b>שאלת פתיחה:</b> פרה חולבת אוכלת כ-25 עד 35 ק״ג חומר יבש ביום, ופרה יבשה (שאינה נחלבת) רק כ-12 עד 15 ק״ג. מה גורם להבדל? ומה יקרה לפרה חולבת שתקבל רק מזון מרוכז, בלי מזון גס?</div>
+  </section>
+
+  <section id="cur"></section>
+
+  <section class="goals">
+    <h3>🎯 בסוף היחידה אוכל:</h3>
+    <ul>
+      <li>להבחין בין מזון גס למזון מרוכז, ולתת דוגמאות לכל סוג.</li>
+      <li>להסביר את ההבדל בין שחת, קש ותחמיץ, ולתאר את התהליכים הביולוגיים בהכנת תחמיץ.</li>
+      <li>להסביר את חשיבות הסיבים במנת המזון של מעלי גירה: העלאת גירה, רוק וחומציות הכרס.</li>
+      <li>למנות את המדדים שקובעים את הכמות וההרכב של מנת המזון, ולחשב חומר יבש.</li>
+      <li>להסביר את ההבדלים בין הזנת בקר להזנת עופות, ואת דרישות החלבון והסידן של פטמים ומטילות.</li>
+      <li>לתאר את מסלול האנרגיה במזון: אנרגיה נאכלת, נעכלת, מטבולית, לייצור ולחום.</li>
+      <li>להסביר את הגורמים למחלות תזונתיות: נפחת, חמצת הכרס, הרעלת אמוניה וקדחת חלב.</li>
+    </ul>
+  </section>
+
+  <h2 style="color:var(--accent);margin-top:8px">התחנות</h2>
+  <div class="go">
+    <a href="slides.html"><span class="eartag"><span>1</span></span><h3>📽️ מצגת: סוגי מזונות ברפת ובלול</h3><span>מזון גס ומרוכז, שחת, קש ותחמיץ, תוספים, חומר יבש, מנה כולית, הזנת פטמים ומטילות, אנרגיה ומחלות תזונתיות.</span><small>23 שקפים · בקר ועופות · לפי ספר "הלכה ומעשה" ותוכנית הלימודים</small></a>
+    <a href="energy.html"><span class="eartag"><span>2</span></span><h3>⚡ אנרגיה במזון: מושגים ונתיבים</h3><span>רק שקפי האנרגיה: אנרגיה כללית, נאכלת, נעכלת, מטבולית ונקייה, תוספת חום, קיום וייצור, ותרשים נתיבי האנרגיה.</span><small>2 שקפים · מתוך המצגת של היחידה</small></a>
+    <a href="https://drive.google.com/file/d/1eJ1E3NFZDhcaH54yPqwVC9fN-Ijs5BD7/view" target="_blank" rel="noopener"><span class="eartag"><span>3</span></span><h3 class="ext">📽️ להרחבה: מחלות מטבוליות וטכנולוגיות מזון</h3><span>מרכז המזון, תהליך התחמיץ, חמצת, נפחת וקדחת חלב.</span><small>מצגת מהקלאסרום</small></a>
+    <a href="food-sim.html"><span class="eartag"><span>4</span></span><h3>📷 סימולציה: מה נותנים לאכול?</h3><span>בוחרים פרה, כבשה, סוס או תרנגולת ושלב פיזיולוגי. מצלמים, כותבים או בוחרים מזון, ורואים ערך קלורי, חלבון וסיבים, האם המזון מתאים, ואיך הוא מתפרק במערכת העיכול.</span><small>עם מצלמת הטלפון וזיהוי תמונה · נתוני מזון מ-USDA</small></a>
+    <a href="practice.html"><span class="eartag"><span>5</span></span><h3>✍️ מעבדת תרגול</h3><span>11 שאלות אמריקאיות ו-10 שאלות פתוחות, כולן מבחינות הבגרות, עם משוב ומחוון.</span><small>ניסיון אחד לכל שאלה · קובץ PDF למשימה</small></a>
+  </div>
+
+  <section class="card info">
+    <h3>📖 מילון קצר</h3>
+    <div class="tbl"><table>
+      <tr><th>מושג</th><th>הגדרה</th></tr>
+      <tr><td>מזון גס</td><td>מזון מחלקי הצמח הירוקים או היבשים (עלים וגבעולים), עשיר בסיבים ובתאית. למשל: שחת, קש, תחמיץ, מרעה</td></tr>
+      <tr><td>מזון מרוכז</td><td>מזון עשיר באנרגיה או בחלבון ודל בסיבים, בעיקר מגרגירים ומתוצרי לוואי שלהם. למשל: שעורה, תירס, כוספה</td></tr>
+      <tr><td>שחת (חציר)</td><td>צמח שנקצר ירוק, לפני הבשלת הגרגירים, ויובש בשדה. מכיל את כל חלקי הצמח, ולכן ערכו התזונתי גבוה יחסית</td></tr>
+      <tr><td>קש</td><td>הגבעולים היבשים שנשארים בשדה אחרי קציר הגרגירים. עשיר בתאית וליגנין, דל בחלבון ובאנרגיה</td></tr>
+      <tr><td>תחמיץ</td><td>ירק קצוץ שנדחס בבור אטום. חיידקי חומצת חלב מתסיסים בו את הסוכרים בתנאים אל־אווירניים, ה-pH יורד, והמזון נשמר</td></tr>
+      <tr><td>כוספה</td><td>מה שנשאר מזרעי שמן (למשל סויה) אחרי מיצוי השמן. עשירה בחלבון</td></tr>
+      <tr><td>חומר יבש</td><td>מה שנשאר מהמזון אחרי הוצאת כל המים. מנות מזון מחשבים לפי חומר יבש</td></tr>
+      <tr><td>מנה כולית (בליל)</td><td>מנה שבה כל רכיבי המזון, הגסים, המרוכזים והתוספים, מעורבלים יחד לתערובת אחידה</td></tr>
+      <tr><td>חנקן שאינו חלבון</td><td>תרכובת חנקן, כמו שתנן (אוריאה), שחיידקי הכרס בונים ממנה חלבון</td></tr>
+    </table></div>
+  </section>
+
+  <footer>מדעי החקלאות · יחידה 4 · לפי תוכנית הלימודים, פרק ו2: "הזנה ומערכת העיכול", ופרקי הענף: ז1 "עופות" ו-ז2 "בקר וצאן – תזונה" · השאלות מבוססות על בחינות הבגרות במדעי החקלאות 2019–2025 · היחידה מתבססת על חומרים מאתר מורי החקלאות ומורחבת בחומרים נוספים.</footer>
+</div>
+<script src="../assets/course.js"></script>
+<script src="../assets/curriculum.js"></script>
+<script>renderCurriculum(document.getElementById('cur'), 4)</script>
+<script>renderCourse(document.getElementById('cmap'), 4, '../')</script>
+<a id="tohu-home" href="../index.html" aria-label="חזרה לדף הבית" style="position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:14px;z-index:2147483000;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#2f5d3a;color:#fff;font:700 15px Assistant,system-ui,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.28);direction:rtl">🏠 בית</a>
+</body>
+</html>

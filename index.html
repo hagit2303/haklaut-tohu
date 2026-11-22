@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>חקלאות תוהו: דף הבית</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Secular+One&family=Assistant:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/farm.css">
+<link rel="stylesheet" href="assets/digest.css">
+<style>
+.units{display:grid;gap:14px}
+.unit{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;text-decoration:none;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);transition:border-color .2s,transform .2s}
+a.unit:hover{border-color:var(--accent);transform:translateY(-2px)}
+.unit .eartag{width:54px;height:62px;font-size:1.6rem;border-radius:14px 14px 22px 22px}
+.unit .eartag::before{top:7px;width:9px;height:9px}.unit .eartag span{margin-top:14px}
+.unit h2{font-size:1.4rem;color:var(--accent)}
+.unit p{margin:4px 0 0}
+.unit .go{font-weight:800;color:var(--accent);margin-top:6px;display:inline-block}
+.unit.soon{opacity:.55;box-shadow:none}
+.unit.exam{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--paper))}
+.unit.exam .eartag span{font-size:1.3rem}
+@media (prefers-reduced-motion:reduce){.unit{transition:none}a.unit:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar"><span class="brand">🌱 חקלאות תוהו · כיתה יא</span></header>
+
+  <section class="hero">
+    <span class="label">דף הבית של הקורס</span>
+    <h1>חקלאות תוהו: היחידות שלנו</h1>
+    <p>קודם התוכנית שלנו והדף לקראת המבחן, ומתחתיהם כל יחידות הלימוד, לפי הסדר של תוכנית הלימודים. <b>כל היחידות פתוחות תמיד</b>: אפשר להתחיל, לחזור ולעבור בין יחידות מתי שרוצים. מכל עמוד אפשר לחזור לכאן בלחיצה על 🏠.</p>
+  </section>
+
+  <div class="units" id="top" style="margin-bottom:14px"></div>
+  <div class="units" id="units"></div>
+
+  <footer>מדעי החקלאות · חקלאות תוהו, כיתה יא · חגית ברגמן · היחידות מתבססות על חומרים מאתר מורי החקלאות ומורחבות בחומרים נוספים.</footer>
+</div>
+<script src="assets/course.js"></script>
+<script>
+// בראש הדף: תוכנית הלימודים ודף החזרה לקראת המבחן
+document.getElementById('top').innerHTML = `<a class="unit exam" href="plan.html"><span class="eartag"><span>🗺</span></span><div><span class="label">תוכנית הלימודים</span><h2>התוכנית שלנו לשנתיים</h2><p>ממה מורכב הציון בבגרות, ומה לומדים בכל חודש בכיתה יא ובכיתה יב (בגרות קיץ 2028, כולל האגרוטופ).</p><span class="go">לתוכנית ←</span></div></a>
+<a class="unit exam" href="review/index.html"><span class="eartag"><span>📝</span></span><div><span class="label">לקראת מבחן</span><h2>דף חזרה למבחן</h2><p>חלוקת הנושאים, מושגי מפתח ושאלות בגרות עם משוב מיידי.</p><span class="go">לדף החזרה ←</span></div></a>`;
+document.getElementById('units').innerHTML = COURSE.map(u => {
+  const inner = `<span class="eartag"><span>${u.n}</span></span><div><span class="label">${u.label || 'יחידה ' + u.n}${u.url ? '' : ' · בקרוב'}</span><h2>${u.icon} ${u.t}</h2><p>${u.d}</p>${u.url ? '<span class="go">כניסה ליחידה ←</span>' : ''}</div>`;
+  return u.url ? `<a class="unit" href="${u.url}">${inner}</a>` : `<div class="unit soon">${inner}</div>`;
+}).join('');
+</script>
+</body>
+</html>
